@@ -4,5 +4,6 @@
 
 - [Assignment 1](Assignment1MATH421.html)
 - [Assignment 2](Assignment2.html)
+- [Assignment 3](assignment3.html)
 
 
