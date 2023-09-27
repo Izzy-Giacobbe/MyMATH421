@@ -32,6 +32,7 @@ This assignment works with the [IMDB Top 1000 data](../data/imdb_top_1000.csv). 
 1. List all the names of the columns of the data
 
 ```{r}
+library(tidyverse)
 df = read_csv('https://bryantstats.github.io/math421/data/imdb_top_1000.csv')
 names(df)
 ```
@@ -67,9 +68,11 @@ df %>%
 5. What is the total money earned per movies on average?
 
 ```{r}
-
+df %>% 
+  group_by(Series_Title) %>% 
+  summarise(averageMoney = mean(Gross, na.rm = TRUE)) %>% 
+  summarise(averageTotal = mean(averageMoney, na.rm = TRUE))
 ```
-
 
 6. Calculate the average number of votes by year. Calculate the average number of votes of movies that have IMDB rating greater than 9.
 
@@ -82,6 +85,19 @@ df %>%
 
 
 7. Calculate the average Meta score in 2020 of movies that have number of votes in the third quartile. 
+
+```{r}
+summary(df$Meta_score)
+```
+
+
+```{r}
+df %>% 
+  filter(Released_Year == 2020, Meta_score >= 87.00) %>% 
+  summarise(averageScore = mean(Meta_score, na.rm = TRUE))
+  
+```
+
 
 8. (Optional - Challenging). The current `Runtime` variable is not a numeric. Use the `str_remove` function to remove ` min` from the variables then use `as.numeric` to convert the variable to numeric. Calculate the average running time in the 2010s. Calculate the correlation between running time and rating (adding `use="complete.obs"` in the `cor` function to ignore the missing values).  
 
@@ -99,13 +115,100 @@ df %>% summarise_if(is.numeric, mean, na.rm=TRUE)
 10. Implement the follows functions or combos. Drawing a comment or summary from each calculation. The codes in this question should be different from the codes used in other questions.
 
 - select
+
+```{r}
+df %>% 
+  select(Series_Title, Released_Year, Gross)
+```
+This simply selects different columns in the dataframe and I chose to display the title, year, and gross.
+
 - filter
+
+```{r}
+df %>% 
+  filter(Released_Year >= 2000)
+```
+I filtered the release year so that it would only show movies from the 21st century
+
 - mutate
+
+```{r}
+df %>% 
+  mutate(overallRatingPercentOutOf100 = IMDB_Rating * 10)
+```
+This makes a new column to show the overall IMDB rating but almost as a score/percentage out of 100.
+
 - summarise
+
+```{r}
+df %>% 
+  summarise(averageIMDB = mean(IMDB_Rating, na.rm = TRUE))
+```
+This shows the average mean of all the IMDB ratings of all the movies.
+
 - arrange
+
+```{r}
+df %>% 
+  arrange(Meta_score)
+```
+This arrange shows the movies from worst to best based on meta score.
+
 - count
+
+```{r}
+df %>% 
+  count(Released_Year)
+```
+This shows how many movies were released in each year.
+
 - count + arrange
+
+```{r}
+df %>% 
+  arrange(Series_Title) %>% 
+  count(Certificate) 
+ 
+```
+This shows how many movies are in each certificate from 16 to TV-14. n represents the movie titles.
+
 - filter + count + arrange
+
+```{r}
+df %>% 
+  filter(Certificate == 'R') %>%
+  arrange(IMDB_Rating) %>% 
+  count(Released_Year) 
+
+```
+This filters the data set to only movies rated R, it is arrange from lowest to highest IMDB and then it counts how many of those are released each year.
+
 - group_by + summarise
+
+```{r}
+df %>% 
+  group_by(Released_Year) %>% 
+  summarise(medScore = median(IMDB_Rating, na.rm = TRUE))
+```
+This shows the median IMDB score for each year.
+
 - filter + group_by + summarise
+
+```{r}
+df %>% 
+  filter(Certificate == 'R') %>% 
+  group_by(Released_Year) %>% 
+  summarise(medScore = median(IMDB_Rating, na.rm = TRUE))
+```
+This shows the median of all rated R movies in each year they were released in.
+
 - filter + group_by + summarise + arrange
+
+```{r}
+df %>% 
+  filter(IMDB_Rating >= 8.0) %>% 
+  group_by(Released_Year) %>% 
+  summarise(averageGross = mean(Gross, na.rm = TRUE)) %>% 
+  arrange(-averageGross)
+```
+This filters so that only movies with the IMDB rating of higher or equal to 8.0 are included. It groups these results by the rlease year, and it shows the average Gross arrange from low to high. 
