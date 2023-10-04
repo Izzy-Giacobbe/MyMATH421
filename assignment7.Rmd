@@ -155,7 +155,6 @@ This graph shows the average fare of passengers on titanic based on their class 
 [Link to the plot](abc.png)
 ```
 
-
 ```{r}
 gg <- df %>% 
   group_by(Pclass, Sex) %>% 
@@ -169,8 +168,6 @@ gg <- df %>%
 
 ggsave(filename = 'abc.png', plot = gg)
 ```
-
-
 10. In this question, we will use  the Covid19 vaccination data for the US. The data and data dictionary can be found at the below link:
 
 - [Data](https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations-by-manufacturer.csv)
@@ -179,7 +176,7 @@ ggsave(filename = 'abc.png', plot = gg)
 
 ```{r}
 library(tidyverse)
-df <- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations-by-manufacturer.csv')
+df2 <- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/vaccinations-by-manufacturer.csv')
 ```
 
 
@@ -187,7 +184,7 @@ df <- read_csv('https://raw.githubusercontent.com/owid/covid-19-data/master/publ
 `Geom_point` makes scatter plots, which plot two numeric (or Date) variables. A third categorical variable is often brought in for color. For example, we can compare different vaccine types used in the US by
 
 ```{r}
-df %>% 
+df2 %>% 
   filter(location=='United States') %>% 
   ggplot()+
   geom_point(mapping = aes(x = date, 
@@ -199,13 +196,37 @@ Do the follows.
 
   - Use `geom_point` to compare the vaccines used by date in Argentina in 2022. 
   
-  - Change `geom_point` to `geom_line` in the above codes to have the corresponding line plots. 
+```{r}
+df2 %>% 
+  filter(location=='Argentina', date >= '2022-01-01', date <= '2022-12-31') %>% 
+  ggplot()+
+  geom_point(mapping = aes(x = date, y = total_vaccinations, color = vaccine)) +
+  labs(x='Date', 
+       y = 'Total Vaccines',  
+       title = 'Vaccines used by Date in Argentina in 2022', 
+       caption = 'Sinopharm/Beijing was the most used vaccine in Argentina in 2022')
+```
+  This plot shows the vaccines used in Argentina in 2022. I like this plot because you can clearly see where each vaccine type lies on the plot compared to columns.
+  
+  - Change `geom_point` to `geom_line` in the above codes to have the corresponding line plots.
+  
+```{r}
+df2 %>% 
+  filter(location=='Argentina', date >= '2022-01-01', date <= '2022-12-31') %>% 
+  ggplot()+
+  geom_line(mapping = aes(x = date, y = total_vaccinations, color = vaccine)) +
+  labs(x='Date', 
+       y = 'Total Vaccines',  
+       title = 'Vaccines used by Date in Argentina in 2022', 
+       caption = 'Sinopharm/Beijing was the most used vaccine in Argentina in 2022')
+```
+    This line graph shows the vaccines used in Argentina in 2022. This is very similar to the plot graph above because the data isn't scattered and it is more gradual, so the plotting was smooth just like the lines are.
 
 11. (Using the same dataset as in 10.) Sometime we need to do some calculations on the data before plotting. For example, the below codes is to compare the total vaccines (including all types of vaccines) by date between the US and the EU
 
 ```{r}
 # the total vaccines (including all types of vaccines) by date
-d1 <- df %>% 
+d1 <- df2 %>% 
   filter(location %in% c('United States', 'European Union')) %>% 
   group_by(date, location) %>% 
   summarise(total_vac2=sum(total_vaccinations, na.rm=TRUE))
@@ -221,7 +242,7 @@ d1 %>%
 Notice that the above codes could be piped in one 
 
 ```{r, eval=FALSE}
-df %>% 
+df2 %>% 
   filter(location %in% c('United States', 'European Union')) %>% 
   group_by(date, location) %>% 
   summarise(total_vac2=sum(total_vaccinations, na.rm=TRUE)) %>% 
@@ -236,5 +257,47 @@ Do the follows.
 
 - Use `geom_point` compare the total vaccines (including all types of vaccines) by date between countries/regions in Asia
 
+```{r}
+table(df2$location)
+```
+Hong Kong, Japan, Nepal, South Korea are all in Asia
+
+```{r}
+df2 %>% 
+  filter(location %in% c('Hong Kong', 'Japan', 'Nepal', 'South Korea')) %>% 
+  group_by(date, location) %>% 
+  summarise(total_vac2=sum(total_vaccinations, na.rm=TRUE)) %>% 
+  ggplot()+
+  geom_point(mapping=aes(x=date, 
+                         y=total_vac2, 
+                         color=location)) +
+  labs(x='Date', 
+       y = 'Total Vaccines',  
+       title = 'Vaccines used by Date in Asia', 
+       caption = 'Japan has a steady growth of vaccines throughout the years compared to the other Asian countries')
+```
+This graph shows the total vaccines used/taken in Asia grouped by date and location. You can clearly see that Japan has a steady growth of vaccines taken, but Hong Kong as no growth.
+
 - Use `geom_point` compare the total vaccines (including all types of vaccines) by date between countries/regions in South America in 2021
+
+```{r}
+table(df2$location)
+```
+Argentina, Chile, Ecuador, Peru, Uruguay are all in South America
+
+```{r}
+df2 %>% 
+  filter(location %in% c('Argentina', 'Chile', 'Ecuador', 'Peru', 'Uruguay'),date >= '2021-01-01', date <= '2021-12-31' ) %>% 
+  group_by(date, location) %>% 
+  summarise(total_vac2=sum(total_vaccinations, na.rm=TRUE)) %>% 
+  ggplot()+
+  geom_point(mapping=aes(x=date, 
+                         y=total_vac2, 
+                         color=location)) +
+  labs(x='Date', 
+       y = 'Total Vaccines',  
+       title = 'Vaccines used in South America in 2021', 
+       caption = 'Argentina, Peru, and Chile has a steady growth of vaccines throughout the years compared to the other South American countries')
+```
+This graph shows the total vaccines used/taken in South America in 2021 grouped by date and location. You can clearly see that countries such as Argentina, Peru, and Chile have a steady growth of vaccines. 
 
