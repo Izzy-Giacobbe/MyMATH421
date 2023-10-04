@@ -9,6 +9,7 @@
 - [Assignment 4 Extra Credit](assignment4_extra_credits.html)
 - [Assignment 5](assignment5.html)
 - [Assignment 6](assignment6.html)
+- [Link to the plot](abc.png)
 
 
 
