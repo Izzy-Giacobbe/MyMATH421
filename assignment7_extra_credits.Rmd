@@ -1,0 +1,137 @@
+
+---
+output: 
+  html_document:
+  pdf_document: default
+  word_document: default
+title: "Assignment 7 - Extra Credits: Practice dplyr and ggplot2"
+---
+
+***How to do it?***: 
+
+- Open the Rmarkdown file of this assignment ([link](assignment7_extra_credits.Rmd)) in Rstudio. 
+
+- Right under each **question**, insert  a code chunk (you can use the hotkey `Ctrl + Alt + I` to add a code chunk) and code the solution for the question. 
+
+- `Knit` the rmarkdown file (hotkey: `Ctrl + Alt + K`) to export an html.  
+
+-  Publish the html file to your Githiub Page. 
+
+***Submission***: Submit the link on Github of the assignment to Canvas
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+
+-------
+
+1. Import the data at https://bryantstats.github.io/math421/data/ds_salaries.csv
+
+    The data description can be found at https://www.kaggle.com/datasets/saurabhshahane/data-science-jobs-salaries
+    
+```{r}
+library(tidyverse)
+df <- read_csv('https://bryantstats.github.io/math421/data/ds_salaries.csv')
+```
+    
+
+2. Is there any column that contains NAs?
+
+```{r}
+colSums(is.na(df))
+```
+There are no NAs in any column
+
+3. What is the most frequent job title in the data?  
+
+```{r}
+df %>% 
+  count(job_title) %>% 
+  arrange(-n)
+```
+Data Scientist is the most frequent job title
+
+4. Find the average salary data of the three most frequent job titles in the data. 
+
+```{r}
+df %>%
+  group_by(job_title) %>% 
+  summarise(mean_salary = mean(salary, na.rm=TRUE)) 
+```
+Data Scientist = $508,347.20
+Data Engineer = $179,210.55	
+Data Analyst = $96,604.96	
+
+5. What is the job title that have the highest average salary?
+
+```{r}
+df %>%
+  group_by(job_title) %>% 
+  summarise(mean_salary = mean(salary, na.rm=TRUE)) %>% 
+  arrange(-mean_salary)
+```
+Head of Machine Learning has highest average salary.
+
+6. Which country gives the highest salary on average? 
+
+```{r}
+df %>% 
+  group_by(company_location) %>% 
+  summarise(mean_salary = mean(salary, na.rm=TRUE)) %>% 
+  arrange(-mean_salary)
+```
+It says that CL gives the highest salary on average.
+
+7. Plot five meaningful plots. All plots should have title, caption, and appropriate labels.
+
+```{r}
+df %>% ggplot()+ 
+  geom_bar(mapping=aes(x= company_size, fill =company_location), 
+           position = 'dodge') +
+  labs(x='Company Size', 
+       y = 'Count of Companies',  
+       title = 'Copmany Size based on Location', 
+       caption = 'In general, countries in the US have a lot more companies.')
+```
+```{r}
+df %>% ggplot()+ 
+  geom_bar(mapping=aes(x=experience_level, fill=employment_type), 
+           position = 'fill') +
+  labs(x='Experience Level', 
+       y = 'Individuals Employment Type',  
+       title = 'Employment Type with Experience Level', 
+       caption = 'The majority of the employment type no matter the experience level is FT.')
+```
+
+```{r}
+df %>% 
+  ggplot()+
+  geom_point(mapping = aes(x = work_year, y = salary, color = salary_currency)) +
+  labs(x='Year of Work', 
+       y = 'Salary',  
+       title = 'Salary Currency used compared to Salary', 
+       caption = 'One salary currency used that is very high is CLP in 2021')
+```
+```{r}
+df %>% ggplot()+ 
+  geom_bar(mapping=aes(x=employment_type, fill=salary_currency), 
+           position = 'dodge') +
+  labs(x='Employment Type', 
+       y = 'Count of Employees',  
+       title = 'Salary Currency with Employment Type', 
+       caption = 'The employment type FT has the most diverse selection of salary currency.')
+```
+```{r}
+df %>% 
+  filter(salary_currency == "USD", company_location == 'US') %>% 
+  ggplot()+
+  geom_point(mapping = aes(x = work_year, y = salary_in_usd)) +
+  labs(x='Year of Work', 
+       y = 'Salary in USD',  
+       title = 'Salary in USD in the USA', 
+       caption = 'In 2020, the salaries are much less compared to 2021 and 2022')
+```
+
