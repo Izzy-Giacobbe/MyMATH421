@@ -43,7 +43,7 @@ df <- read_csv('https://bryantstats.github.io/math421/data/ds_salaries.csv')
 ```{r}
 colSums(is.na(df))
 ```
-There are no NAs in any column
+There are no NA in any column
 
 3. What is the most frequent job title in the data?  
 
