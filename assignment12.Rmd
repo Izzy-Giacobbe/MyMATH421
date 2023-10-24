@@ -1,0 +1,180 @@
+
+---
+output: 
+  html_document:
+  pdf_document: default
+  word_document: default
+title: "Assignment 12: Predictive Modeling - Part 3"
+---
+
+***How to do it?***: 
+
+- Open the Rmarkdown file of this assignment ([link](assignment12.Rmd)) in Rstudio. 
+
+- Right under each **question**, insert  a code chunk (you can use the hotkey `Ctrl + Alt + I` to add a code chunk) and code the solution for the question. 
+
+- `Knit` the rmarkdown file (hotkey: `Ctrl + Alt + K`) to export an html.  
+
+-  Publish the html file to your Githiub Page. 
+
+***Submission***: Submit the link on Github of the assignment to Blackboard.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE)
+```
+
+
+1. Use the `PimaIndiansDiabetes` dataset. Use 15% data for testing. Use cross-validation with of 7 folds to tune random forest `(method='ranger')`.  What are the parameters that produce the greatest accuracy? What is the testing accuracy. 
+
+```{r}
+library(mlbench)
+library(tidyverse)
+data(PimaIndiansDiabetes)
+df <- tibble(PimaIndiansDiabetes)
+
+library(caret)
+df <- df %>% rename(target=diabetes)
+
+# Remove some columns
+df <- df %>% select(-pressure, -triceps, -mass, -pedigree)
+
+df <- df %>% 
+  mutate(target = as.factor(target),
+         pregnant = as.factor(pregnant),
+         glucose = as.factor(glucose),
+         insulin = as.factor(insulin),
+         age = as.factor(age)
+         )
+
+df$age[is.na(df$age)] = mean(df$age, na.rm = TRUE)
+
+df = drop_na(df)
+
+set.seed(2020)
+splitIndex <- createDataPartition(df$target, p = .85, 
+                                  list = FALSE)
+df_train <- df[ splitIndex,]
+df_test <- df[-splitIndex,]
+
+getModelInfo('ranger')$ranger$parameters
+
+```
+```{r}
+trControl = trainControl(method = "cv",
+                         number = 7)
+tuneGrid = expand.grid(mtry = 2:4,
+                       splitrule = c('gini', 'extratrees'),
+                       min.node.size = c(1:10))
+forest_ranger <- train(target~., data=df_train, 
+                    method = "ranger", 
+                    trControl = trControl,
+                    tuneGrid = tuneGrid)
+
+pred <- predict(forest_ranger, df_test)
+cm <- confusionMatrix(data = pred, reference = df_test$target, positive = "pos")
+cm$overall[1]
+```
+Mentioned above is the testing accuracy.
+```{r}
+print(forest_ranger)
+```
+Mentioned above are the parameters that produce the greatest accuracy.
+
+```{r}
+plot(forest_ranger)
+```
+2. Use the `PimaIndiansDiabetes` dataset. Go to https://topepo.github.io/caret/available-models.html and pick a classification model.  Tune the classification model using cross-validation of 7 folds. 
+
+```{r}
+library(xgboost)
+library(caret)
+
+trControl <- trainControl(method = "cv", number = 7, verboseIter = TRUE)
+tuneGrid <- expand.grid(
+  nrounds = c(100, 200, 300),   
+  max_depth = c(3, 6, 9),      
+  eta = c(0.01, 0.1, 0.3),     
+  gamma = 0,                   
+  colsample_bytree = 1,        
+  min_child_weight = 1,       
+  subsample = 1                
+)
+
+xgb_model <- train(
+  target ~ ., data = df_train,
+  method = "xgbTree",            
+  trControl = trControl,
+  tuneGrid = tuneGrid
+)
+
+pred <- predict(xgb_model, df_test)
+cm <- confusionMatrix(data = pred, reference = df_test$target, positive = "pos")
+cm$overall[1]
+```
+The testing accuracy is 0.6608696
+```{r}
+plot(xgb_model)
+```
+
+3. (Model Comparison) Use the `PimaIndiansDiabetes` dataset. Pick two models at [this link](https://topepo.github.io/caret/available-models.html) to compare using 7-fold cross validation method. Evaluate the accuracy of the final model on the test data. 
+
+```{r}
+library(glmnet)
+library(caret)
+
+trControl <- trainControl(method = "cv", number = 7, verboseIter = TRUE)
+
+tuneGrid <- expand.grid(
+  alpha = 0:1,           
+  lambda = 10^seq(-4, 4, length.out = 9)  
+)
+
+glm_model <- train(
+  target ~ ., data = df_train,
+  method = "glmnet",
+  trControl = trControl,
+  tuneGrid = tuneGrid
+)
+
+pred <- predict(glm_model, df_test)
+cm <- confusionMatrix(data = pred, reference = df_test$target, positive = "pos")
+cm$overall[1]
+```
+```{r}
+plot(glm_model)
+```
+
+```{r}
+library(gbm)
+
+trControl <- trainControl(method = "cv", number = 7, verboseIter = TRUE)
+
+tuneGrid <- expand.grid(
+  n.trees = c(100, 200, 300),  
+  interaction.depth = c(3, 6, 9),  
+  shrinkage = c(0.01, 0.1, 0.3),  
+  n.minobsinnode = c(10, 20, 30)
+)
+
+gbm_model <- train(
+  target ~ ., data = df_train,
+  method = "gbm",
+  trControl = trControl,
+  tuneGrid = tuneGrid
+)
+
+pred <- predict(gbm_model, df_test)
+cm <- confusionMatrix(data = pred, reference = df_test$target, positive = "pos")
+cm$overall[1]
+```
+The testing accuracy is 0.6608696
+
+```{r}
+plot(gbm_model)
+```
+```{r}
+results <- resamples(list('GLM' = glm_model,
+                          'GBM' = gbm_model))
+bwplot(results)
+```
+
