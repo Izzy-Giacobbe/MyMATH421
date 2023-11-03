@@ -1,0 +1,761 @@
+
+---
+title: "Math 421 - Midterm"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: united
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+## Instruction
+
+The midterm has two components: the Rmarkdown notebook (html) and the presentation.  We will do the presentation in class. Post both the notebook and the presentation on your Github page. 
+
+**The notebook:** The notebook should be created using `rmarkdown` or Quarto (like other assignments). The notebook should have a title. 
+
+
+**The Presentation:** Present your results in 5-10 minutes. To make the presentation using Rmarkdown, do the follows: 
+
+    - In Rstudio -> File -> New File -> R markdown
+    
+    - In the left panel, click to Presentation -> Click OK
+    
+    - Now you have an Rmarkdown that can be knitted to be a html presentation 
+    
+- You can also use the Rmd templates of the class slides. 
+
+- You can also use Quarto to create the presentation: *In Rstudio -> File -> New File -> Quarto Presentation...*
+    
+- You do not need to rerun all the codes for the presentation. For example, to show the model comparison, you just need to show the image of the model comparison instead of running all the models again.
+    
+- To inset an image in a slide, use  `![](image.png)`
+
+- To scale images, you can use `![](image.png){width="60%"}` or follow these below instructions. 
+    
+    - https://bookdown.org/yihui/rmarkdown-cookbook/figure-size.html
+    
+    - http://zevross.com/blog/2017/06/19/tips-and-tricks-for-working-with-images-and-figures-in-r-markdown-documents/
+
+- To turn off message and warning of a code cell, use:  `{r, message=FALSE, warning=FALSE}` for the cell. 
+
+**What to present**:
+
+  - Present Part 2 - Visualization
+  
+  - Present Question Question 4, 5 and 6 in Part 3.  
+  
+  - Present any errors/challenges you run into and how you fix/overcome them. 
+
+**Data:**  
+
+The data for the mid-term project is the Rhode Island Department of Health Hospital Discharge Data.  Each row of the data presents a patient. 
+
+Link: https://drive.google.com/open?id=15QNBf6YYKocK2nNIfpKDer58kQnCPNZJ 
+
+**Notice**
+
+- Since this is a large dataset, you could try to run the codes on the smaller dataset, which is a portion of the original dataset before running the codes on the original data.  To create a random subset of the data you could use
+
+```{r, eval=FALSE}
+# find the number of rows of the data
+#n = nrow(df)
+
+# subset 1000 rows of the data
+#df1 = df[sample(1:n, 1000), ]
+```
+
+
+-------
+
+## I. Data Wranggling
+
+1. Download the data file `hdd0318cy.sas7bdat`.  
+
+2. Use `read_sas` in library `haven` to read the data. 
+
+```{r}
+library(haven)
+df <- read_sas("C:/Users/student/Documents/GitHub/MyMATH421/midtermData.sas7bdat")
+
+library(readr)
+write_csv(df, "midterm.csv")
+
+```
+
+3. Filter the data to have only patients of the year 2018 (`yod=18`)
+
+```{r}
+library(tidyverse)
+library(dplyr)
+df1 <- df %>% 
+  filter(yod==18)
+```
+    
+4. Select to work with only following variables: 
+
+```{r}
+df2 <- df1 %>% select("yod", "payfix","pay_ub92","age",  
+                      "sex","raceethn","provider","moa", 
+                      "yoa","mod","admtype", "asource" , 
+                      "preopday" ,"los", "service" , "icu","ccu",    
+                      "dispub92", "payer"  ,"drg","trandb", 
+                      "randbg","randbs","orr", "anes","seq",   
+                      "lab","dtest", "ther","blood","phar", 
+                      "other","patcon","bwght","total","tot" ,  
+                      "ecodub92","b_wt","pt_state","diag_adm","ancilar" ,
+                      "campus","er_fee","er_chrg","er_mode","obs_chrg",
+                      "obs_hour","psycchrg","nicu_day")
+```
+
+
+*Notice*:  You may want to save the current data to your computer for easy access later.  To save the data file use `write_csv(df, 'midterm.csv')`, for example.  Also notice that, empty values in the data before writing to csv may turn to NAs later when you re-read the file.
+
+```{r}
+write_csv(df2, 'midterm.csv')
+```
+
+5. What are variables that have missing values?
+
+```{r}
+colSums(is.na(df2))
+```
+```{r}
+table(df2$admtype)
+```
+```{r}
+df2 <- df2 %>% filter(!(is.na(admtype) | admtype == ""))
+df2 <- df2 %>% filter(!(is.na(admtype) | admtype == 9))
+table(df2$admtype)
+```
+```{r}
+table(df2$sex)
+```
+```{r}
+df2 <- df2 %>% filter(!(is.na(sex) | sex == 9))
+table(df2$sex)
+```
+```{r}
+table(df2$raceethn)
+```
+```{r}
+df2 <- df2 %>% filter(!(is.na(raceethn) | raceethn == ""))
+table(df2$raceethn)
+```
+```{r}
+table(df2$asource)
+```
+```{r}
+df2 <- df2 %>% filter(!(is.na(asource) | asource == ""))
+table(df2$asource)
+```
+payfix, preopday, obs_hour, and nicu_day all have missing values
+
+6. Remove all variables with missing values. 
+
+```{r}
+df2 <- df2 %>% 
+  select(-payfix, -preopday, -obs_hour, -nicu_day)
+```
+
+7. Refer to the data description in the file `HDD2015-18cy6-20-19.docx`, which variable recording the month of admission?, which variable recording the month of discharge?
+
+According to the data description, month of admission is for moa and month of discharge is mod.
+
+8. Which month admitted the most number of patients? Which month admitted the most number of male patients?
+
+```{r}
+df2 %>% 
+  count(moa) %>% 
+  arrange(-n)
+```
+Month 10, October, admitted the most patients
+
+```{r}
+df2 %>% 
+  filter(sex == 1) %>% 
+  count(moa) %>% 
+  arrange(-n)
+```
+Month 10, October, admitted the most male patients.
+
+9. Which month had the most number of teenage female patients?
+
+```{r}
+df2 %>% 
+  filter(sex == 2, age>= 13 & age <=19) %>%
+  count(moa) %>% 
+  arrange(-n)
+```
+Month three, March, had the most female teenage patients admitted.
+
+10. Which provider has the most number of female patients in October? 
+
+```{r}
+df2 %>% 
+  filter(sex == 2, moa == 10) %>% 
+  count(provider) %>% 
+  arrange(-n)
+```
+Provider 7205 had the most female patients in October, with 1505.
+
+11. Are female patients older than male patients, on average? 
+
+```{r}
+df2 %>% 
+  filter(sex == 1) %>% 
+  summarise(meanAge = mean(age, na.rm=TRUE))
+```
+```{r}
+df2 %>% 
+  filter(sex == 2) %>% 
+  summarise(meanAge = mean(age, na.rm=TRUE)) 
+```
+On average, males are older than females.
+
+12. Calculate the average age of patients by months. Which month has the oldest patients on average age?
+
+```{r}
+df2 %>% 
+  group_by(moa) %>% 
+  summarise(meanAge = mean(age, na.rm=TRUE)) %>% 
+  arrange(-meanAge)
+
+```
+Month one, January, has the oldest patients on average age. 
+
+13. What is the name of the provider that has the highest total charge?
+
+```{r}
+df2 %>% 
+  select(provider, tot) %>% 
+  arrange(-tot)
+```
+Provider 7214 has the highest total charge  of $3,402,056
+
+14. What is the name of the provider that has the least total charge for teenage male on average?
+
+```{r}
+df2 %>% 
+  filter(sex == 1, age >= 13 & age <= 19) %>% 
+  group_by(provider) %>% 
+  summarise(sumTot = sum(tot, na.rm=TRUE))%>% 
+  arrange(sumTot)
+```
+Provider 7214 has the least total charge for teenage males on average, with $28,950.
+
+15. Create a season (Spring, Summer, Fall, Winter) variable. Calculate the length of stays by season.  Which season has the longest length of stays on average?
+
+```{r}
+df2 <- df2 %>%
+  mutate(Season = case_when(
+    moa %in% c(3, 4, 5) ~ "Spring",
+    moa %in% c(6, 7, 8) ~ "Summer",
+    moa %in% c(9, 10, 11) ~ "Fall",
+    TRUE ~ "Winter"
+  ))
+```
+
+```{r}
+df2<-df2 %>%
+  mutate(lengthOfStayMonths = (yod - yoa) * 12 + (mod - moa))
+```
+
+```{r}
+df2 %>% 
+  group_by(Season) %>% 
+  summarise(meanLength = mean(lengthOfStayMonths, na.rm = TRUE)) %>% 
+  arrange(-meanLength)
+```
+Fall on average has the longest length of stays.
+
+16. On average, how much a 20 year-old male get charged for staying 1 day in the Fall season?
+
+```{r}
+df2 %>% 
+  filter(age == 20, sex == 1, Season == "Fall") %>% 
+  summarise(meanTot = mean(tot, na.rm = TRUE))
+```
+A 20 year old male staying in the Fall would on average be charged $30,956
+
+17. Write a paragraph to summarize the section and give your comments on the results. You could do some other calculations to support your points. 
+
+In this section, I performed various data manipulation and analysis tasks on a dataset of healthcare-related information. I started by reading the data from a SAS file and filtered it to include only patients from the year 2018. I then selected a subset of variables for further analysis and removed variables with missing values. This section provided insights into patient demographics, admissions, and charges in the healthcare dataset. It highlighted variations in patient characteristics across different months, seasons, and providers. The results could be valuable for healthcare administrators looking to understand and improve healthcare services. 
+
+-------
+
+## II. Data Visualization
+
+Continue with the data from part I. 
+
+1. Provides at least 10 meaningful plots. Comments on the plots. All plots should have title, caption, appropriate labels on x and y-axis
+
+```{r}
+df2 %>% ggplot() +
+  geom_point(mapping = aes(x = sex, y = tot)) +
+  facet_wrap(~admtype, scales = "free", labeller = as_labeller(c(`1` = "Emergency", `2` = "Urgent", `3` = "Electric", `4` = "Newborn", `5` = "Trauma"))) +
+  labs(
+    x = 'Gender',
+    y = 'Total Patient Charges',
+    title = 'Total Patient Charges by Admission Type and Gender',
+    caption = 'Electric and Emergency have the highest total patient charges with a man in Electric having the highest charge.'
+  )
+
+```
+```{r}
+df2 %>% ggplot() +
+  geom_point(mapping = aes(x = sex, y = tot)) +
+  facet_wrap(~raceethn, scales = "free", labeller = as_labeller(c("1" = "White",
+    "2" = "Black",
+    "3" = "Asian",
+    "4" = "Amer. Indian",
+    "5" = "Native Hawaiian",
+    "6" = "Other",
+    "7" = "Hispanic",
+    "9"   =  "UK Race"))) +
+  labs(
+    x = 'Gender',
+    y = 'Total Patient Charges',
+    title = 'Total Patient Charges by Gender and Race')
+```
+
+```{r}
+
+df2 %>% ggplot() + 
+  geom_bar(mapping = aes(x = admtype, fill = factor(sex, labels = c("Male", "Female")), position = 'dodge')) +
+  labs(x = 'Admission Type', 
+       y = 'Count of Patients',  
+       title = 'Count of Patients based on Admission Type', 
+       caption = 'The Emergency Admission type had the most admissions in 2018.') +
+  scale_x_discrete(labels = c(
+    "1" = "Emergency",
+    "2" = "Urgent",
+    "3" = "Electric",
+    "4" = "Newborn",
+    "5" = "Trauma"
+  ))
+
+```
+
+```{r}
+df2 %>% ggplot() + 
+  geom_bar(mapping = aes(x = asource, fill = factor(sex, labels = c("Male", "Female")), position = 'dodge')) +
+  labs(x = 'Admission Source', 
+       y = 'Count of Patients',  
+       title = 'Count of Patients based on Admission Source', 
+       caption = 'Males in the Physician Referal Source had the most admissions in 2018.') 
+  
+```
+
+```{r}
+df2 %>% 
+  ggplot() +
+  geom_point(mapping = aes(x = moa, y = tot, color = admtype)) +
+  labs(x = 'Month of Admission', 
+       y = 'Total Patient Charge',  
+       title = 'Total Patient Charge based on Month of Admission and Admission Type',
+       color = 'Admission Type') +
+  scale_color_discrete(labels = c(
+   "1" = "Emergency",
+    "2" = "Urgent",
+    "3" = "Electric",
+    "4" = "Newborn",
+    "5" = "Trauma"
+  ))
+```
+
+```{r}
+df2 %>% 
+  ggplot() +
+  geom_point(mapping = aes(x = moa, y = tot, color = asource)) +
+  labs(x = 'Month of Admission', 
+       y = 'Total Patient Charge',  
+       title = 'Tot. Patient Charge based on MOA and Adm. Source',
+       color = 'Adm. Source') +
+  scale_color_discrete(labels = c(
+    "1" = "Physician Referral",
+    "2" = "Clinic Referral",
+    "4" = "Trans-Hospital",
+		"5" = "Trans-Nurse Facility",
+		"6" = "Trans-Health Care",
+		"8" = "Court/Law Enforcement",
+		"9" = "Information Not Available",
+		"A" = "Transfer from critical access hospital",
+		"D" = "Extramural Birth",
+		"E" = "New born",
+		"F" = "Still Born",
+		"S" = "Born in hospital",
+    "T" = "Born out of hospital",
+		"U" = "Normal Birth",
+		"V" = "Premature birth",
+		"X" = "Extramural Birth"
+  ))
+```
+
+```{r}
+df2 %>% ggplot(aes(x = age, fill = payer)) +
+  geom_bar() +
+  facet_grid(. ~ sex) +
+  labs(
+    x = "Age",
+    y = "Count",
+    title = "Distribution of Payment Types by Age and Gender"
+  ) + 
+  scale_fill_discrete(name = "Payment Type", labels = c( 
+      "0" = "Medicare",
+			"1" = "Medicaid",
+			"4" = "Worker's Compensation",
+			"5" = "Blue Cross",
+			"6" = "Commercial insurance",
+			"7" = "Self pay",
+			"8" = "Other",
+			"B" = "Champus",
+			"D" = "United Healthcare",
+			"E" = "Coordinated Health Partners Inc",
+			"G" = "RIte Care",
+			"H" = "Neighborhood Health Plan of RI",	
+			"Y" = "Missing",
+			'Z' = "Unknown"))
+```
+
+
+```{r}
+df2 %>% ggplot() + 
+  geom_bar(mapping = aes(x = raceethn, fill = asource), position = 'dodge') + 
+  labs(x = 'Race', 
+       y = 'Count of Patients', 
+       title = 'Patient Count based on Race & Admission Source', 
+       caption = 'White, Hispanic, and Black races are the top counts with Physician Referral.') + 
+  scale_x_discrete(name = "Race", labels = c( 
+    "1" = "White",
+    "2" = "Black",
+    "3" = "Asian",
+    "4" = "Amer. Indian",
+    "5" = "Native Hawaiian",
+    "6" = "Other",
+    "7" = "Hispanic",
+    "9"   =  "UK Race")) +
+  scale_fill_discrete(name = "Admission Source", labels = c(
+    "1" = "Physician Referral",
+    "2" = "Clinic Referral",
+    "4" = "Trans-Hospital",
+    "5" = "Trans-Nurse Facility",
+    "6" = "Trans-Health Care",
+    "8" = "Court/Law Enforcement",
+    "9" = "Information Not Available",
+    "A" = "Transfer from critical access hospital",
+    "D" = "Extramural Birth",
+    "E" = "Newborn",
+    "F" = "Still Born",
+    "S" = "Born in hospital",
+    "T" = "Born out of hospital",
+    "U" = "Normal Birth",
+    "V" = "Premature birth",
+    "X" = "Extramural Birth"))
+
+```
+```{r}
+df2 %>% ggplot() + 
+  geom_bar(mapping = aes(x = admtype, fill = raceethn), position = 'dodge') + 
+  labs(x = 'Race', 
+       y = 'Count of Patients', 
+       title = 'Count of Patients based on Race and Admission Type', 
+       caption = 'White, Hispanic, and Black are the top counts.') + 
+  scale_x_discrete(labels = c( 
+    "1" = "Emergency",
+    "2" = "Urgent",
+    "3" = "Electric",
+    "4" = "Newborn",
+    "5" = "Trauma" 
+  )) + 
+  scale_fill_discrete(name = "Admission Type", labels = c( 
+     "1" = "White", 
+    "2" = "Black", 
+    "3" = "Asian", 
+    "4" = "American Indian", 
+    "5" = "Native Hawaiian", 
+    "6" = "Other", 
+    "7" = "Hispanic", 
+    "9" = "Unknown"
+  ))
+```
+
+```{r}
+df2 %>% ggplot()+ 
+  geom_bar(mapping=aes(x=raceethn, fill=payer), 
+           position = 'fill') +
+  labs(x='Race', 
+       y = 'Patient  Payment Type',  
+       title = 'Payment Type based on Race', 
+       caption = 'The majority of the employment type no matter the experience level is FT.')+ 
+  scale_x_discrete(labels = c( 
+    "1" = "White", 
+    "2" = "Black", 
+    "3" = "Asian", 
+    "4" = "Amer. Indian", 
+    "5" = "Native Hawaiian", 
+    "6" = "Other", 
+    "7" = "Hispanic", 
+    "9" = "Unknown" 
+  )) + 
+  scale_fill_discrete(name = "Payment Type", labels = c( 
+      "0" = "Medicare",
+			"1" = "Medicaid",
+			"4" = "Worker's Compensation",
+			"5" = "Blue Cross",
+			"6" = "Commercial insurance",
+			"7" = "Self pay",
+			"8" = "Other",
+			"B" = "Champus",
+			"D" = "United Healthcare",
+			"E" = "Coordinated Health Partners Inc",
+			"G" = "RIte Care",
+			"H" = "Neighborhood Health Plan of RI",	
+			"Y" = "Missing",
+			'Z' = "Unknown"
+  ))
+```
+
+2. Make an animation plot.
+
+```{r}
+library(gganimate)
+library(ggplot2)
+library(tidyverse)
+library(knitr)
+custom_admtype_labels <- c(
+  "1" = "Emergency",
+  "2" = "Urgent",
+  "3" = "Electric",
+  "4" = "Newborn",
+  "5" = "Trauma")
+df2 %>% 
+  ggplot(aes(x = tot, y = age, color = sex)) +
+  geom_point() +
+  transition_states(admtype) +
+  labs(
+    title = 'Admission Type: {closest_state}',
+    x = "Total Charges",
+    y = "Age",
+    color = "Gender"
+  ) +
+  scale_x_discrete(name = "Admission Type", labels = custom_admtype_labels) +  
+  scale_color_discrete(name = "Gender", labels = c("1" = "Male", "2" = "Female")) + 
+  scale_x_continuous(name = "Total Charges") +  
+  scale_y_continuous(name = "Age") +  
+  guides(color = guide_legend(title = "Gender"))  
+```
+
+3. Write a paragraph to summarize the section and give your comments on the results. 
+
+I created multiple plots and an animated plot to visualize the different relationships between total charges, age, gender admission types, admission sources, payment types, and race. The most common race was the white race and it had the highest count and highest amount for total charges for men and women.It was followed by the hispanic race and the black race. I found that the most common admission type among all the races and genders was emergency admissions, which make sense because if there is an emergency you go to RIH. There was a steady total patient charge throughout the year and it did not seem to spike anywhere in particular. The two most popular payment types were Medicare and RIte Care. Many people who were a white race had Medicare, while the rest had majority RIte Care. Many women also had RIte Care. This was between the ages 25-35 and spiked at 30. Many newborns had RIte Care as well. This is because many pregnant women use RIte Care. Many people under 65 had RIte Care, and the majortiy of people over 65 had Medicare, which makes sense because Medicare is for people 65 and up.
+
+-------
+
+## III. Predictive Models
+
+Continue with the data from part I. Make sure you do not have any missing values in the data. Use the follows as the target and input variables: 
+
+*Target Variable*: Create the target variable taking value of 
+
+  - `low` if the total charge of a patient (`tot`) is smaller than the median of the total charge, and
+
+  - `high` otherwise. 
+
+*Input Variables*:
+
+  - "age","sex","raceethn","provider","moa","mod","admtype","campus", 'los'
+  
+```{r}
+medianTot <- median(df2$tot)
+df2$target <- ifelse(df2$tot < medianTot, "low", "high")
+inputVars <- df2 %>%
+  select(age, sex, raceethn, provider, moa, mod, admtype, campus, los, target)
+```
+  
+  
+-------
+
+1. Use `filter` function to filter out rows where `raceethn==''` or `admtype==''`. Make sure all the categorical variables are factor, numeric variables are numeric. Set Training : Testing Split = 10 : 90 
+
+```{r}
+library(caret)
+
+df2 <- df2 %>%
+  filter(raceethn != '', admtype != '') %>% 
+  mutate(sex = as.factor(sex),
+         raceethn = as.factor(raceethn),
+         provider = as.factor(provider),
+         moa = as.factor(moa),
+         mod = as.factor(mod),
+         admtype = as.factor(admtype),
+         campus = as.factor(campus),
+         target = as.factor(target)) %>% 
+  mutate(across(c(age, los, tot), as.numeric))
+
+set.seed(2020)
+
+# random sample the rows
+inputVars <- inputVars %>%
+  sample_frac(0.1)
+
+splitIndex <- createDataPartition(df2$target, p = .90, 
+                                  list = FALSE)
+df_train <- inputVars[splitIndex,]
+df_test <- inputVars[-splitIndex,]
+
+#df_train$target <- as.factor(ifelse(df_train$target == "low", 0, 1))
+
+df_train <- df_train[complete.cases(df_train),]
+colnames(df_train)[colSums(is.na(df_train)) > 0]
+
+df_test$target <- as.factor(df_test$target)
+
+
+```
+2. Train a decision tree using `rpart`.  Plot the decision tree. Plot the variable importance ranked by the tree. 
+
+```{r}
+library(rpart)
+library(rpart.plot)
+
+tree_control <- rpart.control(maxdepth = 3)
+tree_model <- rpart(target ~ ., data = inputVars, method = "class", control = tree_control)
+
+library(rattle)
+fancyRpartPlot(tree_model)
+```
+```{r}
+barplot(tree_model$variable.importance)
+```
+
+3. Using caret for this question. Set `Training Control` to be: Use Cross-Validation of 5 folds across all models.  Train & tune at least 2 different models (i.e. two different values for `method=` in the train function of caret).  Plot the hyper-parameter tuning plots for each model. 
+
+```{r}
+trControl = trainControl(method = "cv",
+                         number = 5)
+tree <- train(target~., data=df_train, 
+                                method = "rpart2", 
+                                trControl = trControl)
+forest_ranger <- train(target~., data=df_train, 
+                    method = "ranger", 
+                                trControl = trControl)
+results <- resamples(list('Decision Tree' = tree,
+                          'Random Forest' = forest_ranger))
+plot(tree)
+plot(forest_ranger)
+```
+
+4. Plot the comparison of the models in 3. 
+
+```{r}
+bwplot(results)
+```
+
+5. What is your final selection for the model? Test the accuracy of your final model on the test data. 
+My final selection would be the random forest because it has a higher accuracy.
+```{r}
+pred <- predict(forest_ranger, df_test)
+pred <- factor(pred, levels = levels(df_test$target))
+levels(df_test$target)
+levels(pred)
+
+
+cm <- confusionMatrix(data = pred, reference = df_test$target, positive = "high")
+cm$overall[1]
+```
+
+6. Create another `target` variable (binary), decide the input variables and redo 1 to 5. 
+
+```{r}
+meanTot <- mean(df2$tot)
+df2$target <- ifelse(df2$tot < meanTot, "low", "high")
+inputVars <- df2 %>%
+  select(age, sex, raceethn, provider, moa, mod, admtype, campus, los, target)
+```
+
+```{r}
+df2 <- df2 %>%
+  filter(raceethn != '', admtype != '') %>% 
+  mutate(sex = as.factor(sex),
+         raceethn = as.factor(raceethn),
+         provider = as.factor(provider),
+         moa = as.factor(moa),
+         mod = as.factor(mod),
+         admtype = as.factor(admtype),
+         campus = as.factor(campus),
+         target = as.factor(target)) %>% 
+  mutate(across(c(age, los, tot), as.numeric))
+
+set.seed(2020)
+
+# random sample the rows
+inputVars <- inputVars %>%
+  sample_frac(0.1)
+
+splitIndex <- createDataPartition(df2$target, p = .90, 
+                                  list = FALSE)
+df_train <- inputVars[splitIndex,]
+df_test <- inputVars[-splitIndex,]
+
+#df_train$target <- as.factor(ifelse(df_train$target == "low", 0, 1))
+
+df_train <- df_train[complete.cases(df_train),]
+colnames(df_train)[colSums(is.na(df_train)) > 0]
+
+df_test$target <- as.factor(df_test$target)
+```
+```{r}
+tree_control <- rpart.control(maxdepth = 3)
+tree_model <- rpart(target ~ ., data = inputVars, method = "class", control = tree_control)
+
+fancyRpartPlot(tree_model)
+```
+```{r}
+barplot(tree_model$variable.importance)
+```
+
+```{r}
+trControl = trainControl(method = "cv",
+                         number = 5)
+tree <- train(target~., data=df_train, 
+                                method = "rpart2", 
+                                trControl = trControl)
+forest_ranger <- train(target~., data=df_train, 
+                    method = "ranger", 
+                                trControl = trControl)
+results <- resamples(list('Decision Tree' = tree,
+                          'Random Forest' = forest_ranger))
+plot(tree)
+plot(forest_ranger)
+```
+```{r}
+bwplot(results)
+```
+My final selection would be the random forest because it has a higher accuracy.
+
+```{r}
+pred <- predict(forest_ranger, df_test)
+pred <- factor(pred, levels = levels(df_test$target))
+levels(df_test$target)
+levels(pred)
+
+
+cm <- confusionMatrix(data = pred, reference = df_test$target, positive = "high")
+cm$overall[1]
+```
+
+7. Write a paragraph to summarize the section and give your comments on the results. 
+
+In this section, I created two different targets and used the same models on them to compare which target had a greater accuracy in the end. When the target variable was the median and the mean, both times the random forest model had a higher accuracy and was used on the testing data set. This is probably because the random forest model (over a decision tree model) reduces overfitting and improves generalization. The mean has a higher accuracy than the median, and this could be because the data set is normally distributed and no outliers skewed it in any direction. 
+-------
