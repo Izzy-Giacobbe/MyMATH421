@@ -1,0 +1,166 @@
+
+---
+title: "Midterm Presentation"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+  html_document:
+    self_contained: false
+   
+---
+
+class: inverse, center, middle
+
+# Data Visualizations
+
+---
+class: center
+
+
+![Alt Text](V2.png)
+
+
+---
+class: center
+
+![Alt Text](V1.png)
+---
+class: center
+
+![Alt Text](V5.png)
+---
+class: center
+
+![Alt Text](V6.png)
+---
+class: center
+
+![Alt Text](V3.png)
+---
+class: center
+
+![Alt Text](V9.png)
+
+---
+class: center
+
+![Alt Text](V4.png)
+
+---
+class: center
+
+![Alt Text](V8.png)
+---
+
+class: center
+
+![Alt Text](V10.png)
+
+---
+class: center
+
+![Alt Text](V7.png)
+
+---
+class: inverse, center, middle
+
+# Animated Plot
+
+![](f1.gif)
+
+---
+
+class: inverse, center, middle
+
+# Questions 4, 5, & 6 in Part III
+
+---
+# Question 4
+
+![Alt Text](V11.png)
+---
+# Question 5
+
+--
+- My final selection would be the random forest because it has a higher accuracy.
+
+--
+
+- When testing the accuracy of the model on the testing data, I got an accuracy of 0.8200772 
+
+--
+
+- This makes sense because random forests tend to have higher accuracy than just an individual decision tree.
+
+--
+
+- Random forests also help with over fitting and are more stable compared to decision trees.
+
+---
+class: center, middle
+
+# Question 6
+---
+#Decision Tree
+
+![Alt Text](V12.png)
+---
+# Variable Importance
+
+![Alt Text](V13.png)
+
+---
+class: center, middle
+
+# Hyper-parameter plots
+---
+#Decision Tree
+
+![Alt Text](V14.png)
+---
+#Random Forest
+
+![Alt Text](V15.png)
+---
+# Results
+
+![Alt Text](V16.png)
+---
+#Conclusion
+
+--
+- My final selection would, once again, be the random forest because it has a higher accuracy.
+
+--
+
+- When testing the accuracy of the model on the testing data, I got an accuracy of 0.8449799. 
+
+--
+
+- This accuracy for the mean is higher than the one for the median.
+
+--
+
+- This could be because of the distribution of the data and outliers.
+---
+#Issues
+
+--
+-Levels with pred and df_test
+
+--
+
+-putting the animated graph on the presentation
+---
+class: center, middle
+
+#Thank you!
+
+
+
+
+
