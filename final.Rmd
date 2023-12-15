@@ -19,9 +19,6 @@ title: "Final Project - Building Interactive Dashboard"
 
 -   Create an empty dashboard. In Rstudio, File -\> New File -\> R Markdown -\> From Template -\> Flex Dashboard. Knit the rmarkdown file and add the html link to this report.
 
-```{r}
-install.packages("flexdashboard")
-```
 - [Question 1](Question1.html)
 
 ### Question 2.
@@ -54,11 +51,6 @@ Follow these below steps to create a shiny flex dashboard then publish it.  Incl
 
 It should look like this
 
-```{r, eval=FALSE}
-rsconnect::setAccountInfo(name='fall20',
-			  token='E130D64F22776383660DA7EA5251EC04',
-			  secret='mJI7rgq2Wf46g2Wf46g2WNOa+E6NRqr26yG3N5')
-```
 
 -   Paste the secret code into Rstudio Console and Run it.
 
