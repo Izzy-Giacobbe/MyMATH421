@@ -1,0 +1,159 @@
+
+---
+title: "Adult Census - Combination of Inputs"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    logo: logo.png
+    source_code: embed
+    social: menu
+
+runtime: shiny
+---
+
+```{r global, include=FALSE}
+# load data in 'global' chunk so it can be shared by all users of the dashboard
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(knitr)
+library(DT)
+library(lubridate)
+library(shiny)
+df <- read_csv('https://bryantstats.github.io/math421/data/adult_census_missing.csv')
+
+start_date <- as.Date("2010-01-01")
+end_date <- as.Date("2022-12-31")
+
+num_dates <- nrow(df)
+
+df$random_dates <- sample(seq(start_date, end_date, by = "1 day"), num_dates, replace = TRUE)
+
+df$date <- format(df$random_dates, "%m-%d-%Y")
+
+df <- drop_na(df, age)
+df <- drop_na(df, fnlwgt)
+df <- drop_na(df, workclass)
+df$date <- mdy(df$date)
+df$income = factor(df$income)
+df$race = factor(df$race)
+
+adultCensusSex <- unique(df$sex)
+
+```
+
+{.sidebar}
+=======================================================================
+
+The sinking of the Titanic is one of the most infamous shipwrecks in history. While there was some element of luck involved in surviving, it seems some groups of people were more likely to survive than others.  Select the input for the plots. 
+
+
+```{r}
+sliderInput(inputId = "fnlwgt_input",
+            label = h2("Select fnlwgt Range"),
+            min = min(df$fnlwgt, na.rm=TRUE),
+            max = max(df$fnlwgt, na.rm=TRUE),
+            value= c(12285, 999999))
+
+selectInput(inputId = "sex_input", 
+            label = h3("Select Gender"),
+            choices = adultCensusSex, 
+            selected = 'Male')
+
+checkboxGroupInput(inputId = "workclass_input", 
+                   label = h3("Workclass Status"),
+                   choices = unique(df$workclass), 
+                   inline = TRUE,
+                   selected = 'Private')
+```
+
+Main Tab 1
+=======================================================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Density Plot
+
+```{r}
+renderPlotly({
+  p1 <- df %>% 
+    filter(fnlwgt>input$fnlwgt_input[1], fnlwgt<input$fnlwgt_input[2]) %>% 
+    ggplot(aes(x=age, color=income))+
+    geom_density()
+  ggplotly(p1)
+})
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Bar Plot
+
+```{r}
+renderPlotly({
+  p2 <- df %>% 
+    filter(fnlwgt>input$fnlwgt_input[1], fnlwgt<input$fnlwgt_input[2]) %>% 
+    ggplot(aes(x=race, fill=income))+
+    geom_bar()
+  ggplotly(p2)
+})
+```
+
+
+Main Tab 2
+=======================================================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Density Plot
+
+```{r}
+renderPlotly({
+  p1 <- df %>% 
+    filter(sex==input$sex_input) %>% 
+    ggplot(aes(x=age, color=income))+
+    geom_density()
+  ggplotly(p1)
+})
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### What is Density Plot?
+
+- A density plot is an alternative to Histogram used for visualizing the distribution of a continuous variable. The peaks of a Density Plot help to identify where values are concentrated over the interval of the continuous variable. Compared to Histograms, Density Plots are better at finding the distribution shape because they are re not affected by the number of bins used (each bar used in a typical histogram).
+
+- For example, a Histogram with only 4 bins wouldn’t produce a distinguishable enough shape of distribution as a 30-bin Histogram would. However, with Density Plots, this isn’t an issue.
+
+
+Main Tab 3
+=======================================================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Bar Plot
+
+```{r}
+renderPlotly({
+  p2 <- df %>% 
+    filter(workclass %in% input$workclass_input) %>% 
+    ggplot(aes(x=race, fill=income))+
+    geom_bar()
+  ggplotly(p2)
+})
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### What is Bar Chart?
+
+- There are two types of bar charts: geom_bar() and geom_col(). geom_bar() makes the height of the bar proportional to the number of cases in each group (or if the weight aesthetic is supplied, the sum of the weights). 
+
+- If you want the heights of the bars to represent values in the data, use geom_col() instead. geom_bar() uses stat_count() by default: it counts the number of cases at each x position. geom_col() uses stat_identity(): it leaves the data as is.
+

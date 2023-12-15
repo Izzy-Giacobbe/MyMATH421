@@ -1,0 +1,97 @@
+
+---
+title: "Adult Census - Check Box"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    logo: logo.png
+    source_code: embed
+    social: menu
+
+runtime: shiny
+---
+
+```{r}
+#rsconnect::setAccountInfo(name='izzygiacobbe', token='26929F938DEB49BAB6202AC2CF22BE5A', secret='SKnn+Tzid8xt783axJO1UnI03voO/3WdtDZ1DZWz')
+```
+
+
+```{r global, include=FALSE}
+# load data in 'global' chunk so it can be shared by all users of the dashboard
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(knitr)
+library(DT)
+library(lubridate)
+library(shiny)
+df <- read_csv('https://bryantstats.github.io/math421/data/adult_census_missing.csv')
+
+start_date <- as.Date("2010-01-01")
+end_date <- as.Date("2022-12-31")
+
+num_dates <- nrow(df)
+
+df$random_dates <- sample(seq(start_date, end_date, by = "1 day"), num_dates, replace = TRUE)
+
+df$date <- format(df$random_dates, "%m-%d-%Y")
+```
+
+```{r}
+df <- drop_na(df, age)
+df <- drop_na(df, fnlwgt)
+df$date <- mdy(df$date)
+df$income = factor(df$income)
+df$race = factor(df$race)
+```
+
+
+{.sidebar}
+=======================================================================
+
+- The sinking of the Titanic is one of the most infamous shipwrecks in history. While there was some element of luck involved in surviving, it seems some groups of people were more likely to survive than others.  Select the input for the plots. 
+
+- In this example, the data for Date is not fictional and not real data. 
+
+```{r}
+dateRangeInput(inputId = "date_input", 
+               label = h2("Date range"), 
+               start = min(df$date), 
+               end = max(df$date),
+               min = min(df$date), 
+               max = max(df$date))
+```
+
+Main Tab 1
+=======================================================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Density Plot
+
+```{r}
+renderPlotly({
+  p1 <- df %>% 
+    filter(date > input$date_input[1], date < input$date_input[2]) %>% 
+    ggplot(aes(x=age, color=income))+
+    geom_density()
+  ggplotly(p1)
+})
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Bar Plot
+
+```{r}
+renderPlotly({
+  p2 <- df %>% 
+    filter(date > input$date_input[1], date < input$date_input[2]) %>% 
+    ggplot(aes(x=race, fill=income))+
+    geom_bar()
+  ggplotly(p2)
+})
+```

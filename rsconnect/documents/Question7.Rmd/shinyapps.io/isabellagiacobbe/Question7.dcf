@@ -1,0 +1,12 @@
+name: Question7
+title: Question7
+username: isabellagiacobbe
+account: isabellagiacobbe
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10792238
+bundleId: 8045616
+url: https://isabellagiacobbe.shinyapps.io/Question7/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

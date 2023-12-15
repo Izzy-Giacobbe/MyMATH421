@@ -1,0 +1,12 @@
+name: Question8
+title: Question8
+username: izzygiacobbe
+account: izzygiacobbe
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10793965
+bundleId: 8046505
+url: https://izzygiacobbe.shinyapps.io/Question8/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

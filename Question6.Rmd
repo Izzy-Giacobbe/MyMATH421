@@ -1,0 +1,76 @@
+
+---
+title: "Adult Census - SliderInput"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    logo: logo.png
+    source_code: embed
+    social: menu
+
+runtime: shiny
+---
+
+```{r global, include=FALSE}
+# load data in 'global' chunk so it can be shared by all users of the dashboard
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(knitr)
+library(DT)
+library(shiny)
+df <- read_csv('https://bryantstats.github.io/math421/data/adult_census_missing.csv')
+df <- drop_na(df, age) 
+df$income = factor(df$income)
+df$race = factor(df$race)
+
+adultCensusSex <- unique(df$sex)
+```
+
+{.sidebar}
+=======================================================================
+
+The sinking of the Titanic is one of the most infamous shipwrecks in history. While there was some element of luck involved in surviving, it seems some groups of people were more likely to survive than others.  Select the input for the plots. 
+
+```{r}
+sliderInput(inputId = "fnlwgt_input",
+            label = h2("Select fnlwgt Range"),
+            min = min(df$fnlwgt, na.rm=TRUE),
+            max = max(df$fnlwgt, na.rm=TRUE),
+            value= c(12285, 999999))
+
+```
+
+Main Tab 1
+=======================================================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Density Plot
+
+```{r}
+renderPlotly({
+  p1 <- df %>% 
+    filter(fnlwgt>input$fnlwgt_input[1], fnlwgt<input$fnlwgt_input[2]) %>% 
+    ggplot(aes(x=age, color=income))+
+    geom_density()
+  ggplotly(p1)
+})
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Bar Plot
+
+```{r}
+renderPlotly({
+  p2 <- df %>% 
+    filter(fnlwgt>input$fnlwgt_input[1], fnlwgt<input$fnlwgt_input[2]) %>% 
+    ggplot(aes(x=race, fill=income))+
+    geom_bar()
+  ggplotly(p2)
+})
+```
