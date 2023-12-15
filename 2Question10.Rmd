@@ -1,0 +1,260 @@
+
+---
+title: "Traffic Stops by Police Officers in RI"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    logo: logo.png
+    source_code: embed
+    social: menu
+
+runtime: shiny
+---
+```{r}
+getwd()
+
+```
+
+
+```{r global, include=FALSE}
+# load data in 'global' chunk so it can be shared by all users of the dashboard
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(knitr)
+library(DT)
+library(shiny)
+#df <- read_csv("C:/Users/student/Documents/GitHub/MyMATH421/RIdata.csv")
+# Set the working directory
+setwd("C:/Users/student/Documents/GitHub/MyMATH421/")
+
+# Read the CSV file
+df <- read_csv("RIdata.csv")
+
+
+df <- drop_na(df, driver_age) 
+df <- drop_na(df, driver_gender) 
+df <- drop_na(df, violation) 
+
+df$is_arrested = factor(df$is_arrested)
+
+driverSex <- unique(df$driver_gender)
+
+tags$div(
+  tags$img(
+    src = "picture.jpg",
+    height = 50,
+    width = NULL  # Set to NULL for automatic scaling
+  ),
+  style = "float: right; padding-right: 20px; padding-top: 10px;"
+)
+
+```
+
+
+{.sidebar}
+=======================================================================
+
+### Traffic Stops
+
+Traffic stops by police officers in Rhode Island have gotten attention, starting conversations about racial profiling and disparities in law enforcement outcomes. Analyzing the collected data reveals patterns that show potential inequities within the criminal justice system. 
+
+```{r}
+selectInput(inputId = "sex_input", 
+            label = h3("Select Gender"),
+            choices = driverSex, 
+            selected = 'M')
+  
+  
+checkboxGroupInput(inputId = "violation_input",                    
+                   label = h3("Select Violations"),
+                   choices = unique(df$violation),
+                   inline = TRUE,
+                   selected = unique(df$violation))
+  
+
+sliderInput(inputId = "age_input",
+            label = h3("Select Age Range"),
+            min = min(df$driver_age, na.rm=TRUE),
+            max = max(df$driver_age, na.rm=TRUE),
+            value = c(min(df$driver_age), max(df$driver_age)))
+
+  
+dateRangeInput(inputId = "date_input",
+               label = h3("Select Date Range"),
+               start = min(df$stop_date),
+               end = max(df$stop_date),
+               min = min(df$stop_date), 
+               max = max(df$stop_date))
+
+radioButtons(inputId = "race_input",
+             label = h3("Select Race"),
+             choices = unique(df$driver_race),
+             inline = TRUE,
+             selected = unique(df$driver_race)[1])
+
+```
+
+```{r}
+tags$img(
+  src = "picture.jpg",
+  height = NULL,
+  width = 200
+)
+```
+
+
+Main Tab 1
+=======================================================================
+
+Column {data-width=500, .tabset}
+-----------------------------------------------------------------------
+
+### Column Tab 1
+
+```{r}
+renderDT({
+  datatable(df, options = list(searching = TRUE, pageLength = 10))
+})
+```
+
+### Column Tab 2
+
+```{r}
+datatable(df, options = list(
+  pageLength = 25
+))
+```
+
+## Column Tab 3
+
+### Insights from Traffic Stop Analysis in Rhode Island
+
+The analysis of traffic stops conducted by police officers in Rhode Island reveals intriguing patterns that merit further investigation. The density plot of driver age by violation suggests a concentration of incidents within certain age groups. Violation counts by violation type and race illustrate disparities in law enforcement outcomes. Box plots and violin plots further explore the relationship between the driver's age, race, and arrest status, providing insights into potential inequities. The time series plot depicting traffic stops over time by race hints at temporal trends, and the proportion of arrests versus non-arrests is visualized in a polar bar plot. A comprehensive table provides detailed data for scrutiny. These visualizations open avenues for a deeper understanding of the factors influencing traffic stops in Rhode Island, raising important questions about the potential presence of racial profiling and disparities in law enforcement outcomes.
+
+Main Tab 2
+=======================================================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Box Plot
+
+```{r}
+renderPlotly({
+  p3 <- df %>% 
+    filter(driver_gender==input$sex_input) %>% 
+    ggplot(aes(x=driver_race, y=driver_age, color=is_arrested))+
+    geom_boxplot() +
+    labs(title = "Box Plot of Driver Age by Arrest Status and Race",
+         x = "Driver Race",
+         y = "Driver Age")
+  ggplotly(p3)
+})
+
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Violin Plot
+
+```{r}
+renderPlotly({
+  p4 <- df %>% 
+    filter(driver_gender==input$sex_input) %>% 
+    ggplot(aes(x=driver_race, y=driver_age, fill=is_arrested))+
+    geom_violin() +
+    labs(title = "Violin Plot of Driver Age by Arrest Status and Race",
+         x = "Driver Race",
+         y = "Driver Age")
+  ggplotly(p4)
+})
+
+```
+
+Main Tab 3
+=======================================================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Time Series Plot
+
+```{r}
+renderPlotly({
+  p7 <- df %>%
+    mutate(hour = hour(stop_time)) %>%
+    group_by(hour) %>%
+    summarise(count = n()) %>%
+    ggplot(aes(x = hour, y = count, color = input$race_input)) +
+    geom_line() +
+    labs(title = "Line Plot of Stops by Hour",
+         x = "Hour of Day",
+         y = "Number of Stops") +
+    theme_minimal()
+  
+  ggplotly(p7)
+})
+
+
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Stop Outcome Proportions
+
+```{r}
+renderPlotly({
+  p6 <- df %>%
+    ggplot(aes(x = factor(is_arrested), fill = is_arrested)) +
+    geom_bar() +
+    labs(title = "Proportion of Arrested vs. Not Arrested",
+         x = "Arrested",
+         y = "Count")
+  
+  ggplotly(p6)
+})
+```
+
+Main Tab 4
+=======================================================================
+Column {data-width=500}
+-----------------------------------------------------------------------
+### Density Plot
+
+```{r}
+renderPlotly({
+  p1 <- df %>% 
+    ggplot(aes(x = driver_age, color = violation)) +
+    geom_density() +
+    labs(title = "Density Plot of Driver Age by Violation",
+         x = "Age")
+  
+  ggplotly(p1, height = 300)
+})
+
+
+```
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### Violation Counts
+
+```{r}
+renderPlotly({
+  p2 <- df %>% 
+    filter(driver_gender==input$sex_input & violation %in% input$violation_input) %>% 
+    ggplot(aes(x=violation, fill=driver_race))+
+    geom_bar(position = "dodge") +
+    labs(title = "Violation Counts by Violation Type and Race",
+         x = "Violation Type",
+         y = "Count") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggplotly(p2)
+})
+
+```
