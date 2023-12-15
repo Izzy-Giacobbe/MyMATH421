@@ -171,7 +171,7 @@ Write a dashboard that
 
 Include the link of your dashboard here.
 
-- [Question 10](https://izzygiacobbe.shinyapps.io/2Question10/)
+- [Question 10](http://127.0.0.1:5207/2Question10.Rmd)
 
 ------------------------------------------------------------------------
 
